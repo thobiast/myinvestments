@@ -1,0 +1,6 @@
+requests
+requests_cache
+pandas
+pandas_datareader
+dash
+dash_bootstrap_components
