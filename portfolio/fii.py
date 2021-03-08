@@ -92,8 +92,8 @@ class FiiDividends:
         if ticker not in self.dividends:
             self.load_dividends(ticker)
 
-        m_filter = self.dividends[ticker]["declaredDate"].dt.month == month
-        y_filter = self.dividends[ticker]["declaredDate"].dt.year == year
+        m_filter = self.dividends[ticker]["payDate"].dt.month == month
+        y_filter = self.dividends[ticker]["payDate"].dt.year == year
         div_value = self.dividends[ticker][y_filter & m_filter].value
         pay_date = self.dividends[ticker][y_filter & m_filter].payDate
         if div_value.empty:
