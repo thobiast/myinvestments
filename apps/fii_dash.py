@@ -131,6 +131,7 @@ def table_current_pos():
         sort_action="native",
         columns=column,
         style_data_conditional=[
+            {"if": {"row_index": "odd"}, "backgroundColor": "rgb(248, 248, 248)"},
             {
                 "if": {
                     "filter_query": "{Gain/Loss Pct} < 0",
@@ -146,6 +147,7 @@ def table_current_pos():
                 "backgroundColor": "dodgerblue",
             },
         ],
+        style_header={"backgroundColor": "rgb(230, 230, 230)", "fontWeight": "bold"},
     )
 
 
@@ -332,6 +334,10 @@ def update_monthly_div_details_table(option_fiis):
         data=pd_df.to_dict("records"),
         sort_action="native",
         columns=columns,
+        style_data_conditional=[
+            {"if": {"row_index": "odd"}, "backgroundColor": "rgb(248, 248, 248)"},
+        ],
+        style_header={"backgroundColor": "rgb(230, 230, 230)", "fontWeight": "bold"},
     )
 
 
@@ -356,6 +362,10 @@ def update_transaction_table(option_fiis):
         data=pd_df.to_dict("records"),
         sort_action="native",
         columns=columns,
+        style_data_conditional=[
+            {"if": {"row_index": "odd"}, "backgroundColor": "rgb(248, 248, 248)"},
+        ],
+        style_header={"backgroundColor": "rgb(230, 230, 230)", "fontWeight": "bold"},
     )
 
 
