@@ -325,9 +325,9 @@ class FiiPortfolio:
     def total_dividend_yield(self):
         """Return portfolio dividend yield for last month."""
         pd_df = self.calc_monthly_dividends()
-        units_prices = pd_df.groupby("Ticker").tail(1)["Adj unit price"].sum()
-        dividends = pd_df.groupby("Ticker").tail(1)["Monthly Dividends"].sum()
-        div_yield = (dividends / units_prices) * 100
+        units_cost = pd_df.groupby("Ticker").tail(1)["Adj Cost"].sum()
+        dividends = pd_df.groupby("Ticker").tail(1)["Amount Received"].sum()
+        div_yield = (dividends / units_cost) * 100
         return div_yield
 
     def total_dividend_received(self, period="Y"):
