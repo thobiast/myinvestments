@@ -89,6 +89,7 @@ fig_div_rcvd_monthly = px.bar(
     title="Dividends Received Monthly",
 )
 fig_div_rcvd_monthly.update_layout(title_x=0.5, yaxis={"tickprefix": "R$ "})
+fig_div_rcvd_monthly.update_xaxes(rangeslider_visible=True)
 
 fig_monthly_pos = px.line(
     fiiportfolio.monthly_position(),
@@ -200,6 +201,7 @@ layout = dbc.Container(
                     ],
                 ),
             ],
+            justify="center",
         ),
         # Dividends received monthly
         dbc.Row(
