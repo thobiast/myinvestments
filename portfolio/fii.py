@@ -92,8 +92,8 @@ class FiiDividends:
         if ticker not in self.dividends:
             self.load_dividends(ticker)
 
-        m_filter = self.dividends[ticker]["payDate"].dt.month == month
-        y_filter = self.dividends[ticker]["payDate"].dt.year == year
+        m_filter = self.dividends[ticker]["declaredDate"].dt.month == month
+        y_filter = self.dividends[ticker]["declaredDate"].dt.year == year
         div_value = self.dividends[ticker][y_filter & m_filter].value
         pay_date = self.dividends[ticker][y_filter & m_filter].payDate
         if div_value.empty:
@@ -294,6 +294,11 @@ class FiiPortfolio:
             by=["Date", "Ticker"], ascending=[sort_date_ascending, True], inplace=True
         ),
         pd_df["Date"] = pd_df["Date"].apply(lambda x: x.strftime("%Y-%b"))
+        pd_df["Pay Month"] = (
+            pd.to_datetime(pd_df["Pay Date"])
+            .dropna()
+            .apply(lambda x: x.strftime("%Y-%b"))
+        )
 
         return pd_df.loc[pd_df["Monthly Dividends"].notna()]
 

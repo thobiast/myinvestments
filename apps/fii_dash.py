@@ -82,7 +82,7 @@ fig_div_rcvd_yearly.update_layout(title_x=0.5, yaxis={"tickprefix": "R$ "})
 
 fig_div_rcvd_monthly = px.bar(
     fiiportfolio.calc_monthly_dividends(),
-    x="Date",
+    x="Pay Month",
     y="Amount Received",
     color="Ticker",
     barmode="stack",
