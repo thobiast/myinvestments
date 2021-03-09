@@ -100,6 +100,7 @@ fig_monthly_pos = px.line(
 fig_monthly_pos.update_layout(
     title_x=0.5, yaxis_title="Money invested", yaxis={"tickprefix": "R$ "}
 )
+fig_monthly_pos.update_xaxes(rangeslider_visible=True)
 
 fig_portfolio_distribution = px.pie(
     fiiportfolio.current_position(),
@@ -109,6 +110,18 @@ fig_portfolio_distribution = px.pie(
 )
 fig_portfolio_distribution.update_layout(title_x=0.5)
 
+fig_monthly_div_yield = px.line(
+    fiiportfolio.calc_monthly_dividends(),
+    y="Dividend Yield",
+    x="Date",
+    color="Ticker",
+    title="Monthly Dividend Yield (%)",
+)
+fig_monthly_div_yield.update_layout(
+    title_x=0.5,
+    yaxis={"tickformat": ",.2f", "ticksuffix": "%"},
+)
+fig_monthly_div_yield.update_xaxes(rangeslider_visible=True)
 
 #############################################################################
 # Table
@@ -230,9 +243,15 @@ layout = dbc.Container(
             [
                 dbc.Col(
                     [dcc.Graph(id="line-fig2", figure=fig_monthly_pos)],
+                    width={"size": 4},
                 ),
                 dbc.Col(
                     [dcc.Graph(id="pie-fig1", figure=fig_portfolio_distribution)],
+                    width={"size": 3},
+                ),
+                dbc.Col(
+                    [dcc.Graph(id="line-fig3", figure=fig_monthly_div_yield)],
+                    width={"size": 5},
                 ),
             ],
         ),
