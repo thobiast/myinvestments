@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 from app import app
 
-from apps import fii_dash
+from apps import fii_dash, stocks_dash
 
 from dash.dependencies import Input, Output
 
@@ -53,7 +52,7 @@ def render_page_content(pathname):
     elif pathname == "/fii":
         return fii_dash.layout
     elif pathname == "/stocks":
-        return html.P("Stocks tracker not yet implemented")
+        return stocks_dash.layout
     # If the user tries to reach a different page, return a 404 message
     return dbc.Jumbotron(
         [

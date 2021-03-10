@@ -36,38 +36,6 @@ percentage = FormatTemplate.Format(precision=2, symbol=Symbol.yes, symbol_suffix
 
 
 #############################################################################
-# Cards
-#############################################################################
-
-
-def create_card(title, content):
-    card = dbc.Card(
-        dbc.CardBody(
-            [
-                html.H4(title, className="card-title"),
-                html.P(content, className="card-text"),
-            ]
-        ),
-        color="info",
-        inverse=True,
-    )
-    return card
-
-
-card1 = create_card(
-    "Total amount invested", "R$ {:,.2f}".format(fiiportfolio.total_invest[0])
-)
-card2 = create_card("Current value", "R$ {:,.2f}".format(fiiportfolio.total_invest[1]))
-card3 = create_card(
-    "Last month dividend yield", "{:.3f} %".format(fiiportfolio.total_dividend_yield)
-)
-card4 = create_card(
-    "All dividends received",
-    "R$ {:,.2f}".format(fiiportfolio.calc_monthly_dividends()["Amount Received"].sum()),
-)
-
-
-#############################################################################
 # Figures
 #############################################################################
 

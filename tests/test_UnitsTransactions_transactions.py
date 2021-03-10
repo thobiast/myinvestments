@@ -4,7 +4,7 @@
 from io import StringIO
 import pytest
 from unittest.mock import patch
-from portfolio import fii
+from portfolio import portutils
 
 
 # Basic test
@@ -75,8 +75,8 @@ result_2 = """\
     ],
 )
 def test_transactions(csv_file, result):
-    fiitransaction = fii.FiiTransactions(csv_file)
-    pd_df = fiitransaction.transactions()
+    unittransaction = portutils.UnitsTransactions(csv_file)
+    pd_df = unittransaction.transactions()
     assert pd_df.to_string() == result
 
 

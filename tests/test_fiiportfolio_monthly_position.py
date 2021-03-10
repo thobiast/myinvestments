@@ -7,6 +7,7 @@ import datetime
 from unittest.mock import patch, Mock
 import pandas as pd
 from portfolio import fii
+from portfolio import fii, portutils
 
 
 def pd_df(Ticker=None):
@@ -62,7 +63,7 @@ Date
 @patch("datetime.datetime")
 def test_monthly_position(mock_datetime):
     mock_datetime.now.return_value = datetime_now
-    with patch.object(fii.FiiTransactions, "__init__", return_value=None):
+    with patch.object(portutils.UnitsTransactions, "__init__", return_value=None):
         fiiportfolio = fii.FiiPortfolio(None)
         with patch.object(fiiportfolio.fiitransactions, "transactions", pd_df):
             x = fiiportfolio.monthly_position()

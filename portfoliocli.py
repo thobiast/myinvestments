@@ -6,7 +6,12 @@ import argparse
 import logging
 import sys
 
+import pandas as pd
+
 from portfolio.fii import FiiPortfolio
+from portfolio.stocks import StocksPortfolio
+
+pd.options.display.float_format = "{:,.2f}".format
 
 
 ##############################################################################
@@ -19,6 +24,7 @@ def parse_parameters():
         %(prog)s -h
         %(prog)s fii -h
         %(prog)s fii -p
+        %(prog)s stocks -p
     """
     parser = argparse.ArgumentParser(
         description="My investments tracker command line",
@@ -31,6 +37,18 @@ def parse_parameters():
 
     # Add subcommands options
     subparsers = parser.add_subparsers(title="Commands", dest="command")
+
+    # stocks
+    stocks_parser = subparsers.add_parser("stocks", help="Portfolio stocks information")
+    stocks_group = stocks_parser.add_mutually_exclusive_group(required=True)
+    stocks_group.add_argument(
+        "-p",
+        "--position",
+        dest="position",
+        action="store_true",
+        help="Show Current Position",
+    )
+
     # fii
     fii_parser = subparsers.add_parser("fii", help="Portfolio FII information")
     fii_group = fii_parser.add_mutually_exclusive_group(required=True)
@@ -116,6 +134,28 @@ def setup_logging(logfile=None, *, filemode="a", date_format=None, log_level="DE
     return logging.getLogger(__name__)
 
 
+def cmd_stocks(args):
+    """Execute stocks subcommand."""
+    stocksportfolio = StocksPortfolio("stocks_transactions.csv")
+
+    if args.position:
+        print(stocksportfolio.current_position().to_string())
+
+
+def cmd_fii(args):
+    """Execute fii subcommand."""
+    fiiportfolio = FiiPortfolio("fii_transactions.csv")
+
+    if args.position:
+        print(fiiportfolio.current_position().to_string())
+    if args.dividends:
+        print(fiiportfolio.calc_monthly_dividends().to_string())
+    if args.transactions:
+        print(fiiportfolio.fiitransactions.transactions())
+    if args.monthly:
+        print(fiiportfolio.monthly_position())
+
+
 ##############################################################################
 # Main function
 ##############################################################################
@@ -129,16 +169,10 @@ def main():
     log = setup_logging() if args.debug else logging
     log.debug("CMD line args: %s", vars(args))
 
-    fiiportfolio = FiiPortfolio("fii_transactions.csv")
-
-    if args.position:
-        print(fiiportfolio.current_position().to_string())
-    if args.dividends:
-        print(fiiportfolio.calc_monthly_dividends().to_string())
-    if args.transactions:
-        print(fiiportfolio.fiitransactions.transactions())
-    if args.monthly:
-        print(fiiportfolio.monthly_position())
+    if args.command == "fii":
+        cmd_fii(args)
+    elif args.command == "stocks":
+        cmd_stocks(args)
 
 
 ##############################################################################

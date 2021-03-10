@@ -1,19 +1,16 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Tracker REITs (Real Estate Investment Trust) investments."""
 
 
 import datetime
-import functools
 
 import pandas as pd
-
-import pandas_datareader as pdr
 
 import requests
 
 import requests_cache
 
+from .portutils import UnitsTransactions, stocks_quote
 
 CACHE_EXPIRE_DAYS = 15
 requests_cache.install_cache(
@@ -21,32 +18,6 @@ requests_cache.install_cache(
     backend="sqlite",
     expire_after=datetime.timedelta(days=CACHE_EXPIRE_DAYS),
 )
-
-
-@functools.lru_cache
-def fii_quote(ticker, start_date=None, end_date=None):
-    """
-    Return dataframe with ticker price(s).
-
-    Parameters:
-        ticker      (str): ticker
-        start_date  (str/datetime): start date to search quotes
-                                    default: today
-        end_date    (str/datetime): end date to search quoted
-                                    default: today
-    """
-    print("Getting current price for ticker ", ticker)
-    start = start_date if start_date else datetime.datetime.today().date()
-    end = end_date if end_date else datetime.datetime.today().date()
-
-    try:
-        quote_df = pdr.DataReader("{}.SA".format(ticker), "yahoo", start, end)
-    except KeyError:
-        print("Error: no price for today. Trying days ago")
-        days_ago = end - datetime.timedelta(days=7)
-        quote_df = pdr.DataReader("{}.SA".format(ticker), "yahoo", days_ago, end)
-
-    return quote_df[["Close"]].tail(1)
 
 
 class FiiDividends:
@@ -102,91 +73,12 @@ class FiiDividends:
             return (div_value.iloc[0], pay_date.iloc[0].strftime("%Y-%m-%d"))
 
 
-class FiiTransactions:
-    """Class to handle the fii transaction (csv file)."""
-
-    def __init__(self, filename):
-        """
-        Initialize fii class.
-
-        Read csv file with following fields:
-            Date;Ticker;Operation;Quantity;Unit Price
-        """
-        self.pd_df = pd.read_csv(
-            filename,
-            sep=";",
-            encoding="UTF-8",
-            parse_dates=["Date"],
-            dayfirst=True,
-            thousands=".",
-            decimal=",",
-        )
-        self.pd_df.sort_values(
-            ["Ticker", "Date", "Operation"], ascending=[True, True, True], inplace=True
-        )
-        self.pd_df["Quantity"] = self._convert_qty_unit_to_negative()
-        self.pd_df["Operation Cost"] = self._add_operation_cost()
-        self.pd_df["Adj Qtd"] = self._add_adjusted_quantity_per_ticker()
-        self._add_adjusted_total_invest_per_ticker()
-        self.pd_df["Adj unit price"] = self._add_adjusted_price_per_ticker()
-
-    def _convert_qty_unit_to_negative(self):
-        """Convert the number of quantity units to negative for sells operations."""
-        return self.pd_df.apply(
-            lambda x: -x["Quantity"] if x["Operation"] == "Venda" else x["Quantity"],
-            axis="columns",
-        )
-
-    def _add_operation_cost(self):
-        """Return the total cost for each operation."""
-        return self.pd_df["Quantity"] * self.pd_df["Unit Price"]
-
-    def _add_adjusted_quantity_per_ticker(self):
-        """Return the adjusted quantity for each ticker (cumulative sum)."""
-        return self.pd_df.groupby("Ticker")["Quantity"].cumsum()
-
-    def _add_adjusted_total_invest_per_ticker(self):
-        """
-        Add to dataframe the adjusted cost for each ticker operation.
-
-        It calculate the cumulative sum for unit quantities.
-        """
-        self.pd_df["reset"] = (
-            self.pd_df.groupby("Ticker")["Adj Qtd"].shift(1) == 0
-        ).cumsum()
-        self.pd_df["Adj Cost"] = self.pd_df.groupby(["Ticker", "reset"])[
-            "Operation Cost"
-        ].cumsum()
-        self.pd_df.loc[self.pd_df["Adj Qtd"] == 0, "Adj Cost"] = 0
-        self.pd_df.drop(["reset"], axis="columns", inplace=True)
-
-    def _add_adjusted_price_per_ticker(self):
-        """Return the adjusted unit price for each ticker on operation."""
-        return self.pd_df.apply(
-            lambda x: 0 if x["Adj Qtd"] == 0 else x["Adj Cost"] / x["Adj Qtd"],
-            axis="columns",
-        )
-
-    def transactions(self, ticker=None):
-        """
-        Return dataframe with all transactions.
-
-        Parameters:
-            Ticker    (str): Return only operation for specific ticker.
-                             Default: all
-        """
-        if ticker:
-            return self.pd_df[self.pd_df["Ticker"] == ticker]
-        else:
-            return self.pd_df
-
-
 class FiiPortfolio:
     """Class to handle the FII portfolio."""
 
     def __init__(self, filename):
         """Initialize fii porfolio class."""
-        self.fiitransactions = FiiTransactions(filename)
+        self.fiitransactions = UnitsTransactions(filename)
         self.fiidiv = FiiDividends()
 
     def current_position(self, ticker=None):
@@ -206,7 +98,7 @@ class FiiPortfolio:
 
         # Add current quote and pct return
         position_df["Current Quote"] = position_df.apply(
-            lambda x: fii_quote(x["Ticker"]).iloc[0][0], axis=1
+            lambda x: stocks_quote(x["Ticker"]).tail(1).iloc[0][0], axis=1
         )
         position_df["Current Value"] = (
             position_df["Current Quote"] * position_df["Adj Qtd"]
@@ -278,7 +170,7 @@ class FiiPortfolio:
         pd_df["Amount Received"] = pd_df["Monthly Dividends"] * pd_df["Adj Qtd"]
         # Get current ticker price
         pd_df["Current Quote"] = pd_df.apply(
-            lambda x: fii_quote(x["Ticker"]).iloc[0][0], axis=1
+            lambda x: stocks_quote(x["Ticker"]).tail(1).iloc[0][0], axis=1
         )
         # Calculate dividend yield for price it paid for ticker and for
         # current ticker price
@@ -349,17 +241,4 @@ class FiiPortfolio:
         return pd_df
 
 
-# fiiportfolio = FiiPortfolio("fii_aplicacoes.csv")
-# print("################")
-# print(fiiportfolio.total_dividend_received("M"))
-# print("Transaction")
-# print(fiiportfolio.fiitransactions.transactions())
-# print("################")
-# print("monthly position")
-# print(fiiportfolio.monthly_position())
-# print(fiiportfolio.current_position())
-# print(fiiportfolio.total_invest)
-# print(fiiportfolio.total_invest_monthly)
-# print("################")
-# print(fiiportfolio.calc_monthly_dividends().to_string())
-# print(fiiportfolio.total_dividend_yield)
+# vim: ts=4
