@@ -24,7 +24,7 @@ from portfolio.fii import FiiPortfolio
 
 print("locale: ", locale.setlocale(locale.LC_ALL, utils_dash.my_locale))
 
-fiiportfolio = FiiPortfolio("fii_transactions.csv")
+fiiportfolio = FiiPortfolio()
 
 
 #############################################################################

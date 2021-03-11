@@ -56,15 +56,23 @@ class UnitsTransactions:
         Read csv file with following fields:
             Date;Ticker;Operation;Quantity;Unit Price
         """
-        self.pd_df = pd.read_csv(
-            filename,
-            sep=";",
-            encoding="UTF-8",
-            parse_dates=["Date"],
-            dayfirst=True,
-            thousands=".",
-            decimal=",",
-        )
+        if filename.endswith((".xls", ".xlsx")):
+            self.pd_df = pd.read_excel(
+                filename,
+                parse_dates=["Date"],
+                thousands=".",
+            )
+        else:
+            self.pd_df = pd.read_csv(
+                filename,
+                sep=";",
+                encoding="UTF-8",
+                parse_dates=["Date"],
+                dayfirst=True,
+                thousands=".",
+                decimal=",",
+            )
+
         self.pd_df.sort_values(
             ["Ticker", "Date", "Operation"], ascending=[True, True, True], inplace=True
         )

@@ -24,7 +24,7 @@ from portfolio.stocks import StocksPortfolio
 
 print("locale: ", locale.setlocale(locale.LC_ALL, utils_dash.my_locale))
 
-stocksportfolio = StocksPortfolio("stocks_transactions.csv")
+stocksportfolio = StocksPortfolio()
 
 
 #############################################################################

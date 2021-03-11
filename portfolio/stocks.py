@@ -1,17 +1,29 @@
 # -*- coding: utf-8 -*-
 """Stocks Tracker."""
 
+import os
+
 import pandas as pd
 
 from .portutils import UnitsTransactions, stocks_quote
 
 
+# Default stocks portfolio csv file
+# It is used if transaction file is not set
+# on environment variable STOCKS_TRANSACTIONS
+CSV_FILE = "example_transactions/stocks_transactions.csv"
+
+
 class StocksPortfolio:
     """Class to handle the Stocks portfolio."""
 
-    def __init__(self, filename):
+    def __init__(self, filename=None):
         """Initialize stocks porfolio class."""
-        self.stockstransactions = UnitsTransactions(filename)
+        self.filename = (
+            filename if filename else os.getenv("STOCKS_TRANSACTIONS", CSV_FILE)
+        )
+        print("Stocks file: ", self.filename)
+        self.stockstransactions = UnitsTransactions(self.filename)
 
     def current_position(self, ticker=None):
         """

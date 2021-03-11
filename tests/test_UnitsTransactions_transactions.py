@@ -1,26 +1,22 @@
 # -*- coding: utf-8 -*-
 """Test transactions  method."""
 
-from io import StringIO
 import pytest
 from unittest.mock import patch
 from portfolio import portutils
 
 
 # Basic test
-file_csv_0 = StringIO(
-    """
+file_csv_0 = """
 Date;Ticker;Operation;Quantity;Unit Price
 26/03/2020;AAA11;Compra;10;97,80
 """
-)
 result_0 = """\
         Date Ticker Operation  Quantity  Unit Price  Operation Cost  Adj Qtd  Adj Cost  Adj unit price
 0 2020-03-26  AAA11    Compra        10        97.8           978.0       10     978.0            97.8"""
 
 # Test cumulative sum (Adjusted values)
-file_csv_1 = StringIO(
-    """
+file_csv_1 = """
 Date;Ticker;Operation;Quantity;Unit Price
 10/03/2020;BBB11;Compra;50;120
 10/04/2020;BBB11;Compra;20;110
@@ -31,7 +27,6 @@ Date;Ticker;Operation;Quantity;Unit Price
 10/07/2020;AAA11;Compra;10;100
 10/08/2020;AAA11;Venda;10;100
 """
-)
 result_1 = """\
         Date Ticker Operation  Quantity  Unit Price  Operation Cost  Adj Qtd  Adj Cost  Adj unit price
 2 2020-03-10  AAA11    Compra        10         100            1000       10      1000      100.000000
@@ -45,8 +40,7 @@ result_1 = """\
 
 # Test if it sells all position the adjusted values also get reseted, i.e,
 # it does count previous valores with next buy
-file_csv_2 = StringIO(
-    """
+file_csv_2 = """
 Date;Ticker;Operation;Quantity;Unit Price
 10/03/2020;BBB11;Compra;50;122
 10/03/2020;AAA11;Compra;10;100
@@ -55,7 +49,6 @@ Date;Ticker;Operation;Quantity;Unit Price
 10/07/2020;AAA11;Compra;10;100
 10/08/2020;AAA11;Compra;10;200
 """
-)
 result_2 = """\
         Date Ticker Operation  Quantity  Unit Price  Operation Cost  Adj Qtd  Adj Cost  Adj unit price
 1 2020-03-10  AAA11    Compra        10         100            1000       10      1000           100.0
@@ -67,15 +60,17 @@ result_2 = """\
 
 
 @pytest.mark.parametrize(
-    "csv_file, result",
+    "filename, csv_file, result",
     [
-        (file_csv_0, result_0),
-        (file_csv_1, result_1),
-        (file_csv_2, result_2),
+        ("file0.csv", file_csv_0, result_0),
+        ("file1.csv", file_csv_1, result_1),
+        ("file2.csv", file_csv_2, result_2),
     ],
 )
-def test_transactions(csv_file, result):
-    unittransaction = portutils.UnitsTransactions(csv_file)
+def test_transactions(filename, csv_file, result, tmp_path):
+    p = tmp_path / filename
+    p.write_text(csv_file)
+    unittransaction = portutils.UnitsTransactions(str(p))
     pd_df = unittransaction.transactions()
     assert pd_df.to_string() == result
 

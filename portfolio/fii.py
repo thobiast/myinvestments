@@ -3,6 +3,7 @@
 
 
 import datetime
+import os
 
 import pandas as pd
 
@@ -12,12 +13,18 @@ import requests_cache
 
 from .portutils import UnitsTransactions, stocks_quote
 
+# Cache for dividends
 CACHE_EXPIRE_DAYS = 15
 requests_cache.install_cache(
     cache_name="fiidiv",
     backend="sqlite",
     expire_after=datetime.timedelta(days=CACHE_EXPIRE_DAYS),
 )
+
+# Default fii portfolio csv file
+# It is used if transaction file is not set
+# on environment variable FII_TRANSACTIONS
+CSV_FILE = "example_transactions/fii_transactions.csv"
 
 
 class FiiDividends:
@@ -76,9 +83,13 @@ class FiiDividends:
 class FiiPortfolio:
     """Class to handle the FII portfolio."""
 
-    def __init__(self, filename):
+    def __init__(self, filename=None):
         """Initialize fii porfolio class."""
-        self.fiitransactions = UnitsTransactions(filename)
+        self.filename = (
+            filename if filename else os.getenv("FII_TRANSACTIONS", CSV_FILE)
+        )
+        print("Fii file: ", self.filename)
+        self.fiitransactions = UnitsTransactions(self.filename)
         self.fiidiv = FiiDividends()
 
     def current_position(self, ticker=None):
