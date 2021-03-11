@@ -5,6 +5,8 @@ import locale
 
 from app import app
 
+from apps import utils_dash
+
 from dash.dependencies import Input, Output
 
 import dash_bootstrap_components as dbc
@@ -13,35 +15,16 @@ import dash_core_components as dcc
 
 import dash_html_components as html
 
-from dash_table import DataTable, FormatTemplate
-from dash_table.Format import Format, Group, Scheme, Symbol
+from dash_table import DataTable
 
 import plotly.express as px
 
 from portfolio.stocks import StocksPortfolio
 
-print("locale: ", locale.setlocale(locale.LC_ALL, "pt_BR.utf8"))
+
+print("locale: ", locale.setlocale(locale.LC_ALL, utils_dash.my_locale))
 
 stocksportfolio = StocksPortfolio("stocks_transactions.csv")
-
-# Configue format for tables
-money = Format(
-    scheme=Scheme.fixed,
-    precision=2,
-    group=Group.yes,
-    groups=3,
-    group_delimiter=".",
-    decimal_delimiter=",",
-    symbol=Symbol.yes,
-    symbol_prefix="R$",
-)
-percentage = FormatTemplate.Format(
-    decimal_delimiter=",",
-    precision=2,
-    scheme=Scheme.fixed,
-    symbol=Symbol.yes,
-    symbol_suffix="%",
-)
 
 
 #############################################################################
@@ -98,10 +81,10 @@ def table_current_pos():
     for col in stocksportfolio.current_position().columns:
         col_fmt = {"name": col, "id": col}
         if col == "Gain/Loss Pct":
-            col_fmt["format"] = percentage
+            col_fmt["format"] = utils_dash.percentage
             col_fmt["type"] = "numeric"
         if col in ["Current Quote", "Current Value", "Adj unit price", "Adj Cost"]:
-            col_fmt["format"] = money
+            col_fmt["format"] = utils_dash.money
             col_fmt["type"] = "numeric"
         column.append(col_fmt)
     return DataTable(
@@ -242,7 +225,7 @@ def update_transaction_table(option_stocks):
     for col in pd_df.columns:
         col_fmt = {"name": col, "id": col}
         if col in ["Unit Price", "Operation Cost", "Adj Cost", "Adj unit price"]:
-            col_fmt["format"] = money
+            col_fmt["format"] = utils_dash.money
             col_fmt["type"] = "numeric"
         columns.append(col_fmt)
     return DataTable(

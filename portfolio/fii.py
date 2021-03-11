@@ -233,7 +233,7 @@ class FiiPortfolio:
         """
         pd_df = self.calc_monthly_dividends()
         pd_df.set_index("Date", inplace=True)
-        pd_df.index = pd.to_datetime(pd_df.index)
+        pd_df.index = pd.to_datetime(pd_df.index, format="%Y-%b")
         pd_df = pd_df[["Amount Received"]].resample(period).sum().reset_index("Date")
 
         date_fmt = "%Y" if period == "Y" else "%Y %b"

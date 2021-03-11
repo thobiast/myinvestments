@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 """FII dashboard layout."""
 
+import locale
 
 from app import app
+
+from apps import utils_dash
 
 from dash.dependencies import Input, Output
 
@@ -12,27 +15,16 @@ import dash_core_components as dcc
 
 import dash_html_components as html
 
-from dash_table import DataTable, FormatTemplate
-from dash_table.Format import Format, Group, Scheme, Symbol
+from dash_table import DataTable
 
 import plotly.express as px
 
 from portfolio.fii import FiiPortfolio
 
 
-fiiportfolio = FiiPortfolio("fii_transactions.csv")
+print("locale: ", locale.setlocale(locale.LC_ALL, utils_dash.my_locale))
 
-money = Format(
-    scheme=Scheme.fixed,
-    precision=2,
-    group=Group.yes,
-    groups=3,
-    group_delimiter=".",
-    decimal_delimiter=",",
-    symbol=Symbol.yes,
-    symbol_prefix="R$",
-)
-percentage = FormatTemplate.Format(precision=2, symbol=Symbol.yes, symbol_suffix="%")
+fiiportfolio = FiiPortfolio("fii_transactions.csv")
 
 
 #############################################################################
@@ -46,7 +38,9 @@ fig_div_rcvd_yearly = px.bar(
     color="Date",
     title="Dividends Received Yearly",
 )
-fig_div_rcvd_yearly.update_layout(title_x=0.5, yaxis={"tickprefix": "R$ "})
+fig_div_rcvd_yearly.update_layout(
+    title_x=0.5, yaxis={"tickprefix": utils_dash.graph_money_prefix}
+)
 
 fig_div_rcvd_monthly = px.bar(
     fiiportfolio.calc_monthly_dividends(),
@@ -56,7 +50,9 @@ fig_div_rcvd_monthly = px.bar(
     barmode="stack",
     title="Dividends Received Monthly",
 )
-fig_div_rcvd_monthly.update_layout(title_x=0.5, yaxis={"tickprefix": "R$ "})
+fig_div_rcvd_monthly.update_layout(
+    title_x=0.5, yaxis={"tickprefix": utils_dash.graph_money_prefix}
+)
 fig_div_rcvd_monthly.update_xaxes(rangeslider_visible=True)
 
 fig_monthly_pos = px.line(
@@ -66,7 +62,9 @@ fig_monthly_pos = px.line(
     title="Monthly Position",
 )
 fig_monthly_pos.update_layout(
-    title_x=0.5, yaxis_title="Money invested", yaxis={"tickprefix": "R$ "}
+    title_x=0.5,
+    yaxis_title="Money invested",
+    yaxis={"tickprefix": utils_dash.graph_money_prefix},
 )
 fig_monthly_pos.update_xaxes(rangeslider_visible=True)
 
@@ -101,10 +99,10 @@ def table_current_pos():
     for col in fiiportfolio.current_position().columns:
         col_fmt = {"name": col, "id": col}
         if col == "Gain/Loss Pct":
-            col_fmt["format"] = percentage
+            col_fmt["format"] = utils_dash.percentage
             col_fmt["type"] = "numeric"
         if col in ["Current Quote", "Current Value", "Adj unit price", "Adj Cost"]:
-            col_fmt["format"] = money
+            col_fmt["format"] = utils_dash.money
             col_fmt["type"] = "numeric"
         column.append(col_fmt)
     return DataTable(
@@ -153,27 +151,34 @@ layout = dbc.Container(
                                     "Total amount invested:", color="secondary"
                                 ),
                                 dbc.ListGroupItem(
-                                    "R$ {:,.2f}".format(fiiportfolio.total_invest[0])
+                                    locale.currency(
+                                        fiiportfolio.total_invest[0], grouping=True
+                                    )
                                 ),
                                 dbc.ListGroupItem("Current Value:", color="secondary"),
                                 dbc.ListGroupItem(
-                                    "R$ {:,.2f}".format(fiiportfolio.total_invest[1])
+                                    locale.currency(
+                                        fiiportfolio.total_invest[1], grouping=True
+                                    )
                                 ),
                                 dbc.ListGroupItem(
                                     "All dividends received:", color="secondary"
                                 ),
                                 dbc.ListGroupItem(
-                                    "R$ {:,.2f}".format(
+                                    locale.currency(
                                         fiiportfolio.calc_monthly_dividends()[
                                             "Amount Received"
-                                        ].sum()
+                                        ].sum(),
+                                        grouping=True,
                                     )
                                 ),
                                 dbc.ListGroupItem(
                                     "Last month dividend yield:", color="secondary"
                                 ),
                                 dbc.ListGroupItem(
-                                    "{:.3f} %".format(fiiportfolio.total_dividend_yield)
+                                    locale.format_string(
+                                        "%.2f%%", fiiportfolio.total_dividend_yield
+                                    )
                                 ),
                             ],
                             horizontal=True,
@@ -305,7 +310,7 @@ def update_monthly_div_details_table(option_fiis):
     for col in pd_df.columns:
         col_fmt = {"name": col, "id": col}
         if col in ["Dividend Yield", "Current Quote Dividend Yield"]:
-            col_fmt["format"] = percentage
+            col_fmt["format"] = utils_dash.percentage
             col_fmt["type"] = "numeric"
         if col in [
             "Adj Cost",
@@ -314,7 +319,7 @@ def update_monthly_div_details_table(option_fiis):
             "Amount Received",
             "Current Quote",
         ]:
-            col_fmt["format"] = money
+            col_fmt["format"] = utils_dash.money
             col_fmt["type"] = "numeric"
         columns.append(col_fmt)
 
@@ -343,7 +348,7 @@ def update_transaction_table(option_fiis):
     for col in pd_df.columns:
         col_fmt = {"name": col, "id": col}
         if col in ["Unit Price", "Operation Cost", "Adj Cost", "Adj unit price"]:
-            col_fmt["format"] = money
+            col_fmt["format"] = utils_dash.money
             col_fmt["type"] = "numeric"
         columns.append(col_fmt)
     return DataTable(
