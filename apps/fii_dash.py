@@ -89,6 +89,17 @@ fig_monthly_div_yield.update_layout(
 )
 fig_monthly_div_yield.update_xaxes(rangeslider_visible=True)
 
+fig_div_rcvd_ticker = px.bar(
+    fiiportfolio.calc_monthly_dividends(),
+    x="Ticker",
+    y="Amount Received",
+    color="Ticker",
+    title="Dividends Received by Ticker",
+)
+fig_div_rcvd_ticker.update_layout(
+    title_x=0.5, yaxis={"tickprefix": utils_dash.graph_money_prefix}
+)
+
 #############################################################################
 # Table
 #############################################################################
@@ -199,8 +210,11 @@ layout = dbc.Container(
                             figure=fig_div_rcvd_monthly,
                         ),
                     ],
-                    width={"size": 9},
                 ),
+            ],
+        ),
+        dbc.Row(
+            [
                 dbc.Col(
                     [
                         dcc.Graph(
@@ -208,7 +222,15 @@ layout = dbc.Container(
                             figure=fig_div_rcvd_yearly,
                         ),
                     ],
-                    width={"size": 3},
+                    width={"size": 2},
+                ),
+                dbc.Col(
+                    [dcc.Graph(id="line-fig4", figure=fig_div_rcvd_ticker)],
+                    width={"size": 4},
+                ),
+                dbc.Col(
+                    [dcc.Graph(id="line-fig3", figure=fig_monthly_div_yield)],
+                    width={"size": 6},
                 ),
             ],
         ),
@@ -216,15 +238,11 @@ layout = dbc.Container(
             [
                 dbc.Col(
                     [dcc.Graph(id="line-fig2", figure=fig_monthly_pos)],
-                    width={"size": 4},
+                    width={"size": 8},
                 ),
                 dbc.Col(
                     [dcc.Graph(id="pie-fig1", figure=fig_portfolio_distribution)],
-                    width={"size": 3},
-                ),
-                dbc.Col(
-                    [dcc.Graph(id="line-fig3", figure=fig_monthly_div_yield)],
-                    width={"size": 5},
+                    width={"size": 4},
                 ),
             ],
         ),
@@ -235,7 +253,13 @@ layout = dbc.Container(
             ],
         ),
         dbc.Row(
-            [dbc.Col(html.H1(children="Monthly Detailed Dividends"), className="mb-4")]
+            [
+                dbc.Col(
+                    html.H1(children="Monthly Detailed Dividends"),
+                    className="mb-4",
+                    style={"margin-top": "20px"},
+                )
+            ]
         ),
         dbc.Row(
             [
@@ -328,6 +352,7 @@ def update_monthly_div_details_table(option_fiis):
         data=pd_df.to_dict("records"),
         sort_action="native",
         columns=columns,
+        page_size=20,
         style_data_conditional=[
             {"if": {"row_index": "odd"}, "backgroundColor": "rgb(248, 248, 248)"},
         ],
@@ -353,9 +378,10 @@ def update_transaction_table(option_fiis):
         columns.append(col_fmt)
     return DataTable(
         id="table_transaction",
-        data=pd_df.to_dict("records"),
+        data=pd_df.sort_index(ascending=True).to_dict("records"),
         sort_action="native",
         columns=columns,
+        page_size=20,
         style_data_conditional=[
             {"if": {"row_index": "odd"}, "backgroundColor": "rgb(248, 248, 248)"},
         ],
