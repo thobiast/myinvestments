@@ -39,14 +39,71 @@ fig_portfolio_distribution = px.pie(
 )
 fig_portfolio_distribution.update_layout(title_x=0.5)
 
+
+fig_position_by_ticker = px.line(
+    stocksportfolio.get_historical_prices(),
+    y="Position updated",
+    x="Date",
+    color="Ticker",
+    title="Ticker position",
+)
+fig_position_by_ticker.update_layout(
+    title_x=0.5, yaxis={"tickprefix": utils_dash.graph_money_prefix}
+)
+fig_position_by_ticker.update_layout(
+    title_x=0.5,
+    xaxis={
+        "rangeselector": {
+            "buttons": [
+                {"count": 1, "label": "1m", "step": "month", "stepmode": "backward"},
+                {"count": 6, "label": "6m", "step": "month", "stepmode": "backward"},
+                {"count": 1, "label": "YTD", "step": "year", "stepmode": "todate"},
+                {"count": 1, "label": "1y", "step": "year", "stepmode": "backward"},
+                {"count": 2, "label": "2y", "step": "year", "stepmode": "backward"},
+                {"count": 5, "label": "5y", "step": "year", "stepmode": "backward"},
+                {"step": "all"},
+            ],
+        },
+        "rangeslider": {"visible": False},
+        "type": "date",
+    },
+)
+
+
+fig_dividends = px.bar(
+    stocksportfolio.dividends_received("Month"),
+    y="Dividends",
+    x="Month",
+    color="Ticker",
+    title="Monthly Dividends",
+)
+fig_dividends.update_xaxes(rangeslider_visible=True)
+fig_dividends.update_layout(
+    title_x=0.5, yaxis={"tickprefix": utils_dash.graph_money_prefix}
+)
+
+fig_div_rcvd_yearly = px.bar(
+    stocksportfolio.dividends_received("Year"),
+    x="Year",
+    y="Dividends",
+    color="Ticker",
+    title="Dividends Received Yearly",
+)
+fig_div_rcvd_yearly.update_layout(
+    title_x=0.5, yaxis={"tickprefix": utils_dash.graph_money_prefix}
+)
+
+
 fig_compare_prices = px.line(
     stocksportfolio.get_historical_prices(),
     y=["Adj unit price", "Close"],
     x="Date",
     title="My adjusted unit price x Historical price",
     facet_col="Ticker",
-    facet_col_wrap=4,
+    facet_col_wrap=6,
     facet_row_spacing=0.15,
+    facet_col_spacing=0.05,
+    height=800,
 )
 fig_compare_prices.update_layout(
     title_x=0.5,
@@ -61,7 +118,7 @@ fig_compare_prices.update_layout(
                 {"step": "all"},
             ],
             "xanchor": "right",
-            "yanchor": "top",
+            "yanchor": "bottom",
         },
         "rangeslider": {"visible": False},
         "type": "date",
@@ -161,14 +218,44 @@ layout = dbc.Container(
         dbc.Row(
             [
                 dbc.Col(
-                    [dcc.Graph(id="pie-fig1", figure=fig_portfolio_distribution)],
-                    width={"size": 3},
+                    [
+                        dcc.Graph(
+                            id="fig_portfolio_distribution_id",
+                            figure=fig_portfolio_distribution,
+                        )
+                    ],
+                    width={"size": 5},
                 ),
                 dbc.Col(
-                    [dcc.Graph(id="line1-fig1", figure=fig_compare_prices)],
-                    width={"size": 9},
+                    [
+                        dcc.Graph(
+                            id="fig_position_by_ticker_id",
+                            figure=fig_position_by_ticker,
+                        )
+                    ],
+                    width={"size": 7},
                 ),
             ],
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [dcc.Graph(id="fig_div_yearly_id", figure=fig_div_rcvd_yearly)],
+                    width={"size": 4},
+                ),
+                dbc.Col(
+                    [dcc.Graph(id="figdividends_id", figure=fig_dividends)],
+                    width={"size": 8},
+                ),
+            ],
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [dcc.Graph(id="fig_compare_prices_id", figure=fig_compare_prices)],
+                ),
+            ],
+            className="h-100",
         ),
         dbc.Row(
             [dbc.Col(html.H1(children="Current Stocks Position"), className="mb-4")]
@@ -177,6 +264,30 @@ layout = dbc.Container(
             [
                 dbc.Col(table_current_pos()),
             ],
+        ),
+        dbc.Row([dbc.Col(html.H1(children="Dividends"), className="mb-4")]),
+        dbc.Row(
+            [
+                html.Label(
+                    [
+                        "Choose which stocks to show the detailed dividends",
+                        dcc.Dropdown(
+                            id="dividends_table_input",
+                            options=[
+                                {"label": x, "value": x}
+                                for x in stocksportfolio.stockstransactions.transactions().Ticker.unique()
+                            ],
+                            multi=True,
+                            value=stocksportfolio.stockstransactions.transactions().Ticker.unique(),
+                        ),
+                    ]
+                ),
+            ],
+        ),
+        dbc.Row(
+            dbc.Col(
+                html.Div(id="dividends_table"),
+            )
         ),
         dbc.Row([dbc.Col(html.H1(children="Stocks Transactions"), className="mb-4")]),
         dbc.Row(
@@ -213,6 +324,38 @@ layout = dbc.Container(
 
 
 @app.callback(
+    Output(component_id="dividends_table", component_property="children"),
+    [Input(component_id="dividends_table_input", component_property="value")],
+)
+def update_dividends_table(option_stocks):
+    print("#####################")
+    print("# update div_details_table option_stocks: ", option_stocks)
+    pd_df = stocksportfolio.get_dividends()
+    pd_df.sort_values(by=["date", "Ticker"], ascending=[False, True], inplace=True)
+    pd_df = pd_df.loc[pd_df["Ticker"].isin(option_stocks)]
+
+    columns = []
+    for col in pd_df.columns:
+        col_fmt = {"name": col, "id": col}
+        if col in ["value", "Dividends"]:
+            col_fmt["format"] = utils_dash.money
+            col_fmt["type"] = "numeric"
+        columns.append(col_fmt)
+
+    return DataTable(
+        id="dividends_table_id",
+        data=pd_df.to_dict("records"),
+        sort_action="native",
+        columns=columns,
+        page_size=20,
+        style_data_conditional=[
+            {"if": {"row_index": "odd"}, "backgroundColor": "rgb(248, 248, 248)"},
+        ],
+        style_header={"backgroundColor": "rgb(230, 230, 230)", "fontWeight": "bold"},
+    )
+
+
+@app.callback(
     Output(component_id="stocks_transaction_table", component_property="children"),
     [Input(component_id="stocks_trans", component_property="value")],
 )
@@ -230,9 +373,10 @@ def update_transaction_table(option_stocks):
         columns.append(col_fmt)
     return DataTable(
         id="table_transaction",
-        data=pd_df.to_dict("records"),
+        data=pd_df.sort_index(ascending=True).to_dict("records"),
         sort_action="native",
         columns=columns,
+        page_size=20,
         style_data_conditional=[
             {"if": {"row_index": "odd"}, "backgroundColor": "rgb(248, 248, 248)"},
         ],
