@@ -32,10 +32,10 @@ fiiportfolio = FiiPortfolio()
 #############################################################################
 
 fig_div_rcvd_yearly = px.bar(
-    fiiportfolio.total_dividend_received("Y"),
-    x="Date",
+    fiiportfolio.total_dividend_received("year"),
+    x="year",
     y="Amount Received",
-    color="Date",
+    color="Ticker",
     title="Dividends Received Yearly",
 )
 fig_div_rcvd_yearly.update_layout(
@@ -94,6 +94,7 @@ fig_div_rcvd_ticker = px.bar(
     x="Ticker",
     y="Amount Received",
     color="Ticker",
+    hover_data=["Pay Month", "Dividend Yield on Cost"],
     title="Dividends Received by Ticker",
 )
 fig_div_rcvd_ticker.update_layout(

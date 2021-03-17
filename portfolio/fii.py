@@ -233,23 +233,15 @@ class FiiPortfolio:
         div_yield = (dividends / units_cost) * 100
         return div_yield
 
-    def total_dividend_received(self, period="Y"):
+    def total_dividend_received(self, period="year"):
         """
-        Return total dividend received.
+        Return total dividend received by ticker and year or month.
 
         Parameters:
-            Period      (Y/M): Y - yearly
-                               M - monthy
-                               default: "Y"
+            period      (year/month): default year
         """
         pd_df = self.calc_monthly_dividends()
-        pd_df.set_index("Date", inplace=True)
-        pd_df.index = pd.to_datetime(pd_df.index, format="%Y-%b")
-        pd_df = pd_df[["Amount Received"]].resample(period).sum().reset_index("Date")
-
-        date_fmt = "%Y" if period == "Y" else "%Y %b"
-        pd_df["Date"] = pd_df["Date"].dt.strftime(date_fmt)
-        return pd_df
+        return pd_df.groupby([period, "Ticker"]).sum().reset_index()
 
 
 # vim: ts=4
