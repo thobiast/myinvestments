@@ -333,7 +333,7 @@ def update_monthly_div_details_table(option_fiis):
     columns = []
     for col in pd_df.columns:
         col_fmt = {"name": col, "id": col}
-        if col in ["Dividend Yield", "Current Quote Dividend Yield"]:
+        if col in ["Dividend Yield", "Dividend Yield on Cost"]:
             col_fmt["format"] = utils_dash.percentage
             col_fmt["type"] = "numeric"
         if col in [

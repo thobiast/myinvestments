@@ -185,10 +185,10 @@ class FiiPortfolio:
         )
         # Calculate dividend yield for price it paid for ticker and for
         # current ticker price
-        pd_df["Dividend Yield"] = (
+        pd_df["Dividend Yield on Cost"] = (
             pd_df["Monthly Dividends"] / pd_df["Adj unit price"]
         ) * 100
-        pd_df["Current Quote Dividend Yield"] = (
+        pd_df["Dividend Yield"] = (
             pd_df["Monthly Dividends"] / pd_df["Current Quote"]
         ) * 100
 
@@ -228,7 +228,7 @@ class FiiPortfolio:
     def total_dividend_yield(self):
         """Return portfolio dividend yield for last month."""
         pd_df = self.calc_monthly_dividends()
-        units_cost = pd_df.groupby("Ticker").tail(1)["Adj Cost"].sum()
+        units_cost = pd_df.groupby("Ticker").tail(1)["Current Quote"].sum()
         dividends = pd_df.groupby("Ticker").tail(1)["Amount Received"].sum()
         div_yield = (dividends / units_cost) * 100
         return div_yield
