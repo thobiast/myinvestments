@@ -64,6 +64,6 @@ def render_page_content(pathname):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(host="127.0.0.1", port=8050, debug=True)
 
 # vim: ts=4
