@@ -204,7 +204,7 @@ class StocksPortfolio:
 
         return result_df.sort_values(by="date")
 
-    def dividends_received(self, period="year"):
+    def dividends_received(self, period="Year"):
         """
         Return total dividend received by ticker and year or month.
 
@@ -224,7 +224,7 @@ class StocksPortfolio:
 
     @property
     def total_return(self):
-        """Return current performancei pct."""
+        """Return current performance pct."""
         return_pct = ((self.total_invest[1] / self.total_invest[0]) - 1) * 100
         return return_pct
 

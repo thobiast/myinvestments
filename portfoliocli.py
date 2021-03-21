@@ -48,6 +48,20 @@ def parse_parameters():
         action="store_true",
         help="Show Current Position",
     )
+    stocks_group.add_argument(
+        "-o",
+        "--old",
+        dest="historical",
+        action="store_true",
+        help="Show Historical position",
+    )
+    stocks_group.add_argument(
+        "-d",
+        "--dividends",
+        dest="dividends",
+        action="store_true",
+        help="Show Dividends",
+    )
 
     # fii
     fii_parser = subparsers.add_parser("fii", help="Portfolio FII information")
@@ -136,15 +150,19 @@ def setup_logging(logfile=None, *, filemode="a", date_format=None, log_level="DE
 
 def cmd_stocks(args):
     """Execute stocks subcommand."""
-    stocksportfolio = StocksPortfolio("stocks_transactions.csv")
+    stocksportfolio = StocksPortfolio()
 
     if args.position:
         print(stocksportfolio.current_position().to_string())
+    if args.historical:
+        print(stocksportfolio.get_historical_prices().to_string())
+    if args.dividends:
+        print(stocksportfolio.get_dividends().to_string())
 
 
 def cmd_fii(args):
     """Execute fii subcommand."""
-    fiiportfolio = FiiPortfolio("fii_transactions.csv")
+    fiiportfolio = FiiPortfolio()
 
     if args.position:
         print(fiiportfolio.current_position().to_string())
