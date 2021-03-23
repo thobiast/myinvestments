@@ -20,7 +20,7 @@ requests_cache.install_cache(
 )
 
 
-@functools.lru_cache
+@functools.lru_cache()
 def stocks_quote(ticker, start_date=None, end_date=None):
     """
     Return dataframe with ticker price(s).
