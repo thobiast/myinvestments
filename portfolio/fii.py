@@ -109,7 +109,8 @@ class FiiPortfolio:
 
         # Add current quote and pct return
         position_df["Current Quote"] = position_df.apply(
-            lambda x: stocks_quote(x["Ticker"]).tail(1).iloc[0][0], axis=1
+            lambda x: stocks_quote(x["Ticker"], x["Stock Exchange"]).tail(1).iloc[0][0],
+            axis=1,
         )
         position_df["Current Value"] = (
             position_df["Current Quote"] * position_df["Adj Qtd"]
@@ -181,7 +182,8 @@ class FiiPortfolio:
         pd_df["Amount Received"] = pd_df["Monthly Dividends"] * pd_df["Adj Qtd"]
         # Get current ticker price
         pd_df["Current Quote"] = pd_df.apply(
-            lambda x: stocks_quote(x["Ticker"]).tail(1).iloc[0][0], axis=1
+            lambda x: stocks_quote(x["Ticker"], x["Stock Exchange"]).tail(1).iloc[0][0],
+            axis=1,
         )
         # Calculate dividend yield for price it paid for ticker and for
         # current ticker price

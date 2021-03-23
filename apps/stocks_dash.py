@@ -39,6 +39,21 @@ fig_portfolio_distribution = px.pie(
 )
 fig_portfolio_distribution.update_layout(title_x=0.5)
 
+fig_portfolio_distribution_broker = px.pie(
+    stocksportfolio.total_invest("Broker")[1],
+    values="Current Value",
+    names=stocksportfolio.total_invest("Broker")[1].index,
+    title="Porfolio Distribution by Broker (current value)",
+)
+fig_portfolio_distribution_broker.update_layout(title_x=0.5)
+
+fig_portfolio_distribution_exchange = px.pie(
+    stocksportfolio.total_invest("Stock Exchange")[1],
+    values="Current Value",
+    names=stocksportfolio.total_invest("Stock Exchange")[1].index,
+    title="Porfolio Distribution by Exchange (current value)",
+)
+fig_portfolio_distribution_exchange.update_layout(title_x=0.5)
 
 fig_position_by_ticker = px.line(
     stocksportfolio.get_historical_prices(),
@@ -191,13 +206,13 @@ layout = dbc.Container(
                                 ),
                                 dbc.ListGroupItem(
                                     locale.currency(
-                                        stocksportfolio.total_invest[0], grouping=True
+                                        stocksportfolio.total_invest()[0], grouping=True
                                     )
                                 ),
                                 dbc.ListGroupItem("Current Value:", color="secondary"),
                                 dbc.ListGroupItem(
                                     locale.currency(
-                                        stocksportfolio.total_invest[1], grouping=True
+                                        stocksportfolio.total_invest()[1], grouping=True
                                     )
                                 ),
                                 dbc.ListGroupItem("Total Return:", color="secondary"),
@@ -229,11 +244,32 @@ layout = dbc.Container(
                 dbc.Col(
                     [
                         dcc.Graph(
+                            id="fig_portfolio_distribution_broker_id",
+                            figure=fig_portfolio_distribution_broker,
+                        )
+                    ],
+                    width={"size": 3},
+                ),
+                dbc.Col(
+                    [
+                        dcc.Graph(
+                            id="fig_portfolio_distribution_exchange_id",
+                            figure=fig_portfolio_distribution_exchange,
+                        )
+                    ],
+                    width={"size": 3},
+                ),
+            ],
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        dcc.Graph(
                             id="fig_position_by_ticker_id",
                             figure=fig_position_by_ticker,
                         )
                     ],
-                    width={"size": 7},
                 ),
             ],
         ),

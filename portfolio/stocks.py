@@ -34,12 +34,13 @@ class StocksDividends:
         """Initialize stocks dividends class."""
         self.dividends = {}
 
-    def download_dividends(self, ticker, start_date=None, end_date=None):
+    def download_dividends(self, ticker, exchange, start_date=None, end_date=None):
         """
         Download all dividends paid out for a ticker.
 
         Parameters:
-            ticker    (str): stock ticker
+            ticker    (str): Stock ticker
+            exchange  (str): Stock exchange
             start    (date): start date to search
             end      (date): date to stop search
         """
@@ -47,26 +48,28 @@ class StocksDividends:
         start = start_date if start_date else datetime.datetime.today().date()
         end = end_date if end_date else datetime.datetime.today().date()
 
+        ticker_ya = "{}.SA".format(ticker) if exchange == "B3" else ticker
         try:
             self.dividends[ticker] = pdr.DataReader(
-                "{}.SA".format(ticker), "yahoo-dividends", start, end
+                ticker_ya, "yahoo-dividends", start, end
             )
         except (KeyError, pdr._utils.RemoteDataError):
             self.dividends[ticker] = pd.DataFrame()
 
-    def get_ticker_dividends(self, ticker, start_date=None, end_date=None):
+    def get_ticker_dividends(self, ticker, exchange, start_date=None, end_date=None):
         """
         Return DataFrame with dividends paid out for a ticker.
 
         Parameters:
-            ticker   (str): Fii ticker
+            ticker    (str): Stock ticker
+            exchange  (str): Stock exchange
             start    (date): start date to search
             end      (date): date to stop search
 
         Return:  DataFrame
         """
         if ticker not in self.dividends:
-            self.download_dividends(ticker, start_date, end_date)
+            self.download_dividends(ticker, exchange, start_date, end_date)
 
         return self.dividends[ticker]
 
@@ -103,7 +106,7 @@ class StocksPortfolio:
 
         # Add current quote and pct return
         position_df["Current Quote"] = position_df.apply(
-            lambda x: stocks_quote(x["Ticker"]).iloc[0][0], axis=1
+            lambda x: stocks_quote(x["Ticker"], x["Stock Exchange"]).iloc[0][0], axis=1
         )
         position_df["Current Value"] = (
             position_df["Current Quote"] * position_df["Adj Qtd"]
@@ -131,8 +134,14 @@ class StocksPortfolio:
                 .iloc[0]
                 .to_pydatetime()
             )
+            # Get stock exchange
+            exchange = (
+                self.stockstransactions.transactions(ticker)
+                .head(1)["Stock Exchange"]
+                .iloc[0]
+            )
             # Get historical quote for ticker
-            quote_df = stocks_quote(ticker, start_date.date())
+            quote_df = stocks_quote(ticker, exchange, start_date.date())
 
             # Get ticker transactions
             pd_df = (
@@ -176,14 +185,14 @@ class StocksPortfolio:
         # so it can not query all dividends history of a ticker
         first_day_df = (
             self.stockstransactions.transactions()
-            .groupby("Ticker")[["Date", "Ticker"]]
+            .groupby("Ticker")[["Date", "Ticker", "Stock Exchange"]]
             .head(1)
         )
 
         for _, row in first_day_df.iterrows():
             # Get dividends for a ticker. Dividends paid out after the first transaction
             div_df = self.stocksdividends.get_ticker_dividends(
-                row.Ticker, start_date=row.Date
+                row.Ticker, row["Stock Exchange"], start_date=row.Date
             ).copy()
             if div_df.empty:
                 print("No dividends for ticker: ", row.Ticker)
@@ -214,18 +223,27 @@ class StocksPortfolio:
         pd_df = self.get_dividends()
         return pd_df.groupby([period, "Ticker"]).sum().reset_index()
 
-    @property
-    def total_invest(self):
-        """Return total amount invested and the current holdings value."""
-        return (
-            self.current_position()["Adj Cost"].sum(),
-            self.current_position()["Current Value"].sum(),
-        )
+    def total_invest(self, by_col=None):
+        """
+        Return total amount invested and the current holdings value.
+
+        Parameters:
+            by_col   (str): if it should group (aggregate) the result by
+                            a column. Example: Broker
+                            default: no aggregation
+
+        """
+        if by_col:
+            pd_df = self.current_position().groupby(by_col)
+        else:
+            pd_df = self.current_position()
+
+        return (pd_df["Adj Cost"].sum(), pd_df["Current Value"].sum())
 
     @property
     def total_return(self):
         """Return current performance pct."""
-        return_pct = ((self.total_invest[1] / self.total_invest[0]) - 1) * 100
+        return_pct = ((self.total_invest()[1] / self.total_invest()[0]) - 1) * 100
         return return_pct
 
 

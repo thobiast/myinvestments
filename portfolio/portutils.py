@@ -21,12 +21,13 @@ requests_cache.install_cache(
 
 
 @functools.lru_cache()
-def stocks_quote(ticker, start_date=None, end_date=None):
+def stocks_quote(ticker, exchange, start_date=None, end_date=None):
     """
     Return dataframe with ticker price(s).
 
     Parameters:
-        ticker      (str): ticker
+        ticker               (str): ticker
+        exchange             (str): stock exchange
         start_date  (str/datetime): start date to search quotes
                                     default: today
         end_date    (str/datetime): end date to search quoted
@@ -36,12 +37,14 @@ def stocks_quote(ticker, start_date=None, end_date=None):
     start = start_date if start_date else datetime.datetime.today().date()
     end = end_date if end_date else datetime.datetime.today().date()
 
+    ticker = "{}.SA".format(ticker) if exchange == "B3" else ticker
+
     try:
-        quote_df = pdr.DataReader("{}.SA".format(ticker), "yahoo", start, end)
+        quote_df = pdr.DataReader(ticker, "yahoo", start, end)
     except KeyError:
         print("Error: no price for today. Trying days ago")
         days_ago = end - datetime.timedelta(days=7)
-        quote_df = pdr.DataReader("{}.SA".format(ticker), "yahoo", days_ago, end)
+        quote_df = pdr.DataReader(ticker, "yahoo", days_ago, end)
 
     return quote_df[["Close"]]
 
@@ -54,7 +57,7 @@ class UnitsTransactions:
         Initialize units transactions class.
 
         Read csv file with following fields:
-            Date;Ticker;Operation;Quantity;Unit Price
+            Date;Broker;Stock Exchange;Ticker;Operation;Quantity;Unit Price
         """
         if filename.endswith((".xls", ".xlsx")):
             self.pd_df = pd.read_excel(
