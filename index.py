@@ -3,7 +3,7 @@
 
 from app import app
 
-from apps import fii_dash, stocks_dash
+from apps import fii_dash, home_dash, stocks_dash
 
 from dash.dependencies import Input, Output
 
@@ -48,7 +48,7 @@ app.layout = html.Div(
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 def render_page_content(pathname):
     if pathname == "/":
-        return html.P("This is the content of the home page!")
+        return home_dash.layout
     elif pathname == "/fii":
         return fii_dash.layout
     elif pathname == "/stocks":

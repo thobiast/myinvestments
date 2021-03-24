@@ -210,5 +210,14 @@ class UnitsTransactions:
 
         return result_df.dropna()
 
+    def money_invested_monthly(self):
+        """Return dataframe with amount of money invested monthly."""
+        pd_df = self.transactions()
+        return (
+            pd_df.groupby(pd_df["Date"].dt.strftime("%Y-%m"))[["Operation Cost"]]
+            .sum()
+            .reset_index("Date")
+        )
+
 
 # vim: ts=4
