@@ -80,7 +80,19 @@ class FiiDividends:
             return (div_value.iloc[0], pay_date.iloc[0].strftime("%Y-%m-%d"))
 
 
-class FiiPortfolio:
+class Singleton(type):
+    """Create singleton class."""
+
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        """Check if there is instance before initialize."""
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class FiiPortfolio(metaclass=Singleton):
     """Class to handle the FII portfolio."""
 
     def __init__(self, filename=None):
