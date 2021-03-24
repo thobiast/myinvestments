@@ -10,7 +10,7 @@ import pandas_datareader as pdr
 
 import requests_cache
 
-from .portutils import UnitsTransactions, stocks_quote
+from .portutils import UnitsTransactions
 
 
 # Cache for dividends
@@ -96,48 +96,14 @@ class StocksPortfolio:
         """
         return self.stockstransactions.current_position(ticker)
 
-    def get_historical_prices(self):
-        """Return dataframe with historical position and price."""
-        tickers = self.current_position()["Ticker"].unique().tolist()
+    def get_historical_prices(self, ticker=None):
+        """
+        Return dataframe with historical position and price.
 
-        result_df = pd.DataFrame()
-
-        for ticker in tickers:
-            # Get date there is the first transaction for ticker
-            start_date = (
-                self.stockstransactions.transactions(ticker)
-                .head(1)["Date"]
-                .iloc[0]
-                .to_pydatetime()
-            )
-            # Get stock exchange
-            exchange = (
-                self.stockstransactions.transactions(ticker)
-                .head(1)["Stock Exchange"]
-                .iloc[0]
-            )
-            # Get historical quote for ticker
-            quote_df = stocks_quote(ticker, exchange, start_date.date())
-
-            # Get ticker transactions
-            pd_df = (
-                self.stockstransactions.transactions(ticker)
-                .set_index("Date")
-                .drop(["Operation", "Quantity", "Unit Price"], axis="columns")
-            )
-
-            # Concat dataframes with transactions and quotes for ticker
-            result_tmp_df = pd.concat([pd_df, quote_df], axis="columns")
-            result_tmp_df.fillna(method="ffill", inplace=True)
-            result_tmp_df.reset_index("Date", inplace=True)
-
-            result_tmp_df["Position updated"] = (
-                result_tmp_df["Adj Qtd"] * result_tmp_df["Close"]
-            )
-            # Concat result_tmp dataframe with the one the has final result
-            result_df = pd.concat([result_df, result_tmp_df])
-
-        return result_df.dropna()
+        Concat dataframe with historical daily tickers prices with
+        the ticker position at that day.
+        """
+        return self.stockstransactions.get_historical_position_prices(ticker)
 
     def get_div_position(self, ticker, date):
         """

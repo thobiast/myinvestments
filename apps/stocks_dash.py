@@ -60,7 +60,9 @@ fig_position_by_ticker = px.line(
     y="Position updated",
     x="Date",
     color="Ticker",
-    title="Ticker position",
+    hover_data=["Adj Qtd", "Close"],
+    hover_name="Ticker",
+    title="Daily Market Position",
 )
 fig_position_by_ticker.update_layout(
     title_x=0.5, yaxis={"tickprefix": utils_dash.graph_money_prefix}

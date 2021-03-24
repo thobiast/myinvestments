@@ -55,7 +55,7 @@ fig_div_rcvd_monthly.update_layout(
 )
 fig_div_rcvd_monthly.update_xaxes(rangeslider_visible=True)
 
-fig_monthly_pos = px.line(
+fig_monthly_pos = px.area(
     fiiportfolio.monthly_position(),
     y="Adj Cost",
     color="Ticker",
@@ -100,6 +100,22 @@ fig_div_rcvd_ticker = px.bar(
 fig_div_rcvd_ticker.update_layout(
     title_x=0.5, yaxis={"tickprefix": utils_dash.graph_money_prefix}
 )
+
+fig_daily_ticker_pos = px.line(
+    fiiportfolio.get_historical_position_prices(),
+    y="Position updated",
+    x="Date",
+    color="Ticker",
+    hover_data=["Adj Qtd", "Close"],
+    hover_name="Ticker",
+    title="Daily Market Position",
+)
+fig_daily_ticker_pos.update_layout(
+    title_x=0.5,
+    yaxis_title="Position",
+    yaxis={"tickprefix": utils_dash.graph_money_prefix},
+)
+fig_daily_ticker_pos.update_xaxes(rangeslider_visible=True)
 
 #############################################################################
 # Table
@@ -244,6 +260,17 @@ layout = dbc.Container(
                 dbc.Col(
                     [dcc.Graph(id="pie-fig1", figure=fig_portfolio_distribution)],
                     width={"size": 4},
+                ),
+            ],
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        dcc.Graph(
+                            id="fig_daily_ticker_pos_id", figure=fig_daily_ticker_pos
+                        )
+                    ],
                 ),
             ],
         ),

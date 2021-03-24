@@ -102,6 +102,15 @@ class FiiPortfolio:
         """
         return self.fiitransactions.current_position(ticker)
 
+    def get_historical_position_prices(self, ticker=None):
+        """
+        Return dataframe with historical position and price.
+
+        Concat dataframe with historical daily tickers prices with
+        the ticker position at that day.
+        """
+        return self.fiitransactions.get_historical_position_prices(ticker)
+
     def monthly_position(self, ticker=None):
         """Return a dataframe with monthly position (holdings)."""
         pd_df_tmp = self.fiitransactions.transactions(ticker).copy()

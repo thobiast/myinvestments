@@ -33,7 +33,7 @@ def stocks_quote(ticker, exchange, start_date=None, end_date=None):
         end_date    (str/datetime): end date to search quoted
                                     default: today
     """
-    print("Getting current price for ticker ", ticker)
+    print("Getting prices for ticker ", ticker)
     start = start_date if start_date else datetime.datetime.today().date()
     end = end_date if end_date else datetime.datetime.today().date()
 
@@ -163,6 +163,52 @@ class UnitsTransactions:
             ["Operation", "Date", "Quantity", "Unit Price", "Operation Cost"],
             axis="columns",
         )
+
+    def get_historical_position_prices(self, ticker=None):
+        """
+        Return dataframe with historical position and price.
+
+        Concat dataframe with historical daily tickers prices with
+        the ticker position at that day.
+        """
+        # Get list with all tickers
+        tickers = self.current_position(ticker)["Ticker"].unique().tolist()
+
+        result_df = pd.DataFrame()
+
+        for ticker in tickers:
+            # Get date there is the first transaction for ticker
+            start_date = (
+                self.transactions(ticker).head(1)["Date"].iloc[0].to_pydatetime()
+            )
+            # Get stock exchange
+            exchange = self.transactions(ticker).head(1)["Stock Exchange"].iloc[0]
+            # Get historical quote for ticker.
+            # Start day is the first time a ticker was bought
+            # End day is today
+            quote_df = stocks_quote(ticker, exchange, start_date.date())
+
+            # Get ticker transactions
+            pd_df = self.transactions(ticker).drop(
+                ["Operation", "Quantity", "Unit Price"], axis="columns"
+            )
+            # Convert datetime to date
+            pd_df["Date"] = pd.to_datetime(pd_df["Date"]).dt.date
+            pd_df.drop_duplicates("Date", keep="last", inplace=True)
+            pd_df.set_index("Date", inplace=True)
+
+            # Concat dataframes with transactions and quotes for ticker
+            result_tmp_df = pd.concat([pd_df, quote_df], axis="columns")
+            result_tmp_df.fillna(method="ffill", inplace=True)
+            result_tmp_df.reset_index("Date", inplace=True)
+
+            result_tmp_df["Position updated"] = (
+                result_tmp_df["Adj Qtd"] * result_tmp_df["Close"]
+            )
+            # Concat result_tmp dataframe with the one the has final result
+            result_df = pd.concat([result_df, result_tmp_df])
+
+        return result_df.dropna()
 
 
 # vim: ts=4
