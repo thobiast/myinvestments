@@ -115,7 +115,24 @@ fig_daily_ticker_pos.update_layout(
     yaxis_title="Position",
     yaxis={"tickprefix": utils_dash.graph_money_prefix},
 )
-fig_daily_ticker_pos.update_xaxes(rangeslider_visible=True)
+fig_daily_ticker_pos.update_layout(
+    title_x=0.5,
+    xaxis={
+        "rangeselector": {
+            "buttons": [
+                {"count": 1, "label": "1m", "step": "month", "stepmode": "backward"},
+                {"count": 6, "label": "6m", "step": "month", "stepmode": "backward"},
+                {"count": 1, "label": "YTD", "step": "year", "stepmode": "todate"},
+                {"count": 1, "label": "1y", "step": "year", "stepmode": "backward"},
+                {"count": 2, "label": "2y", "step": "year", "stepmode": "backward"},
+                {"count": 5, "label": "5y", "step": "year", "stepmode": "backward"},
+                {"step": "all"},
+            ],
+        },
+        "rangeslider": {"visible": False},
+        "type": "date",
+    },
+)
 
 #############################################################################
 # Table
