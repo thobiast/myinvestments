@@ -100,29 +100,7 @@ class FiiPortfolio:
             Ticker    (str): Return only for specific ticker.
                              Default: all
         """
-        position_df = (
-            self.fiitransactions.transactions(ticker).groupby("Ticker").tail(1).copy()
-        )
-
-        # Filter out historical tickers, ie, ticker with current position is zero units
-        position_df = position_df.loc[position_df["Adj Qtd"] != 0]
-
-        # Add current quote and pct return
-        position_df["Current Quote"] = position_df.apply(
-            lambda x: stocks_quote(x["Ticker"], x["Stock Exchange"]).tail(1).iloc[0][0],
-            axis=1,
-        )
-        position_df["Current Value"] = (
-            position_df["Current Quote"] * position_df["Adj Qtd"]
-        )
-        position_df["Gain/Loss Pct"] = (
-            (position_df["Current Quote"] / position_df["Adj unit price"]) - 1
-        ) * 100
-
-        return position_df.drop(
-            ["Operation", "Date", "Quantity", "Unit Price", "Operation Cost"],
-            axis="columns",
-        )
+        return self.fiitransactions.current_position(ticker)
 
     def monthly_position(self, ticker=None):
         """Return a dataframe with monthly position (holdings)."""

@@ -5,10 +5,10 @@ import pytest
 from io import StringIO
 from unittest.mock import patch, Mock
 import pandas as pd
-from portfolio import fii, portutils
+from portfolio import portutils
 
 
-def pd_df(Ticker=None):
+def pd_df(cl=None, Ticker=None):
     data_csv = StringIO(
         """
 Date;Broker;Stock Exchange;Ticker;Operation;Quantity;Unit Price;Operation Cost;Adj Qtd;Adj Cost;Adj unit price
@@ -41,10 +41,10 @@ def test_current_position():
 5     AA             B3  AAA11       40      5000      125.000000            150           6000      20.000000
 7     AA             B3  BBB11       70      8200      117.142857            150          10500      28.048781"""
     with patch.object(portutils.UnitsTransactions, "__init__", return_value=None):
-        fiiportfolio = fii.FiiPortfolio(None)
-        with patch.object(fiiportfolio.fiitransactions, "transactions", pd_df):
-            with patch.object(fii, "stocks_quote", mock_fii_quote):
-                x = fiiportfolio.current_position()
+        unitstransactions = portutils.UnitsTransactions(None)
+        with patch.object(portutils.UnitsTransactions, "transactions", pd_df):
+            with patch.object(portutils, "stocks_quote", mock_fii_quote):
+                x = unitstransactions.current_position()
     assert x.to_string() == expected_result
 
 
