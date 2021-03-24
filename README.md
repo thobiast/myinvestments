@@ -19,8 +19,6 @@ $ export FII_TRANSACTIONS='myfiles/fiis.csv'
 $ export STOCKS_TRANSACTIONS='myfiles/stocks.csv'
 ```
 
-As of now, it only supports Brazil investments (stocks and REITs).
-
 ### Interfaces
 
 There are two interfaces available: web dashboard and command-line.
