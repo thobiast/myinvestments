@@ -6,11 +6,14 @@ import datetime
 import os
 import shutil
 import sys
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 
 import pandas as pd
 
 import requests
+
+import requests_cache
 
 from .portutils import Singleton
 
@@ -275,7 +278,8 @@ class FundsCvm:
             print("Local file already exist: ", file_name)
             return local_file
 
-        res = download_file(url, local_file)
+        with requests_cache.disabled():
+            res = download_file(url, local_file)
         if res.status_code == 404:
             print("File not found on cvm site: ", url)
         elif res.status_code == 200:
@@ -285,6 +289,28 @@ class FundsCvm:
             print("download resposnse: %s", res)
 
         return
+
+    def read_csv(self, cnpj, file_name):
+        """
+        Read informe csv and return dataframe for a cpnj fund.
+
+        Parameters:
+            cnpj       (str): fund cnpj
+            file_name  (str): Informe csv file to read
+        """
+        print("Reading csv: ", cnpj, file_name, os.getpid())
+        pd_df = pd.read_csv(
+            file_name,
+            sep=";",
+            encoding="ISO-8859-1",
+            usecols=["CNPJ_FUNDO", "VL_QUOTA", "DT_COMPTC"],
+            parse_dates=["DT_COMPTC"],
+        )
+
+        pd_df = pd_df.loc[pd_df["CNPJ_FUNDO"] == cnpj]
+        pd_df.rename(columns=self.csv_columns, inplace=True)
+
+        return pd_df
 
     def create_fund_df(self, cnpj, start_date):
         """
@@ -297,6 +323,7 @@ class FundsCvm:
             start_date  (str YYYYMM): The first month to gather fund
                                       quote values
         """
+        print("Getting cvm data for: ", cnpj, start_date)
         end_date = datetime.datetime.today().date()
         months = (
             pd.period_range(start_date, end_date, freq="M").strftime("%Y%m").to_list()
@@ -305,25 +332,15 @@ class FundsCvm:
 
         create_dir(CSV_FILES_DIR)
 
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            result = executor.map(self.download_informe_mensal, informe_files)
+        with ProcessPoolExecutor(max_workers=2) as executors:
+            result = executors.map(self.download_informe_mensal, informe_files)
 
         cnpj_local_files = [f for f in result if f is not None]
 
         pd_df = pd.DataFrame()
-        # For each file, create dataframe, filter cnpj and append to pd_df
-        for file_name in cnpj_local_files:
-            pd_tmp_df = pd.read_csv(
-                file_name,
-                sep=";",
-                encoding="ISO-8859-1",
-                usecols=["CNPJ_FUNDO", "VL_QUOTA", "DT_COMPTC"],
-                parse_dates=["DT_COMPTC"],
-            )
-
-            pd_tmp_df = pd_tmp_df.loc[pd_tmp_df["CNPJ_FUNDO"] == cnpj]
-            pd_tmp_df.rename(columns=self.csv_columns, inplace=True)
-            pd_df = pd.concat([pd_df, pd_tmp_df])
+        with ProcessPoolExecutor(max_workers=os.cpu_count() // 2) as executors:
+            result = executors.map(partial(self.read_csv, cnpj), cnpj_local_files)
+        pd_df = pd.concat(result)
 
         pd_df.sort_values("Date", ascending=True, inplace=True)
         self.funds[cnpj] = pd_df
