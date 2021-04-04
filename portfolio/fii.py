@@ -11,7 +11,7 @@ import requests
 
 import requests_cache
 
-from .portutils import UnitsTransactions, stocks_quote
+from .portutils import Singleton, UnitsTransactions, stocks_quote
 
 # Cache for dividends
 CACHE_EXPIRE_DAYS = 15
@@ -78,18 +78,6 @@ class FiiDividends:
             return (None, None)
         else:
             return (div_value.iloc[0], pay_date.iloc[0].strftime("%Y-%m-%d"))
-
-
-class Singleton(type):
-    """Create singleton class."""
-
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        """Check if there is instance before initialize."""
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
 
 
 class FiiPortfolio(metaclass=Singleton):

@@ -3,7 +3,7 @@
 
 from app import app
 
-from apps import fii_dash, home_dash, stocks_dash
+from apps import fii_dash, funds_dash, home_dash, stocks_dash
 
 from dash.dependencies import Input, Output
 
@@ -27,6 +27,7 @@ navbar = dbc.Navbar(
     [
         dbc.NavLink("Home", href="/", active="exact"),
         dbc.NavLink("FII", href="/fii", active="exact"),
+        dbc.NavLink("Funds", href="/funds", active="exact"),
         dbc.NavLink("Stocks", href="/stocks", active="exact"),
     ],
     color="dark",
@@ -51,6 +52,8 @@ def render_page_content(pathname):
         return home_dash.layout
     elif pathname == "/fii":
         return fii_dash.layout
+    elif pathname == "/funds":
+        return funds_dash.layout
     elif pathname == "/stocks":
         return stocks_dash.layout
     # If the user tries to reach a different page, return a 404 message

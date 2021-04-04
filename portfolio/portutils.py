@@ -220,4 +220,16 @@ class UnitsTransactions:
         )
 
 
+class Singleton(type):
+    """Create singleton class."""
+
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        """Check if there is instance before initialize."""
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
 # vim: ts=4

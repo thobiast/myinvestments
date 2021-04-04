@@ -10,7 +10,7 @@ import pandas_datareader as pdr
 
 import requests_cache
 
-from .portutils import UnitsTransactions
+from .portutils import Singleton, UnitsTransactions
 
 
 # Cache for dividends
@@ -72,18 +72,6 @@ class StocksDividends:
             self.download_dividends(ticker, exchange, start_date, end_date)
 
         return self.dividends[ticker]
-
-
-class Singleton(type):
-    """Create singleton class."""
-
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        """Check if there is instance before initialize."""
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
 
 
 class StocksPortfolio(metaclass=Singleton):

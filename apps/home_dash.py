@@ -15,21 +15,24 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from portfolio.fii import FiiPortfolio
+from portfolio.funds import FundsPortfolio
 from portfolio.stocks import StocksPortfolio
 
 print("locale: ", locale.setlocale(locale.LC_ALL, utils_dash.my_locale))
 
 stocksportfolio = StocksPortfolio()
 fiiportfolio = FiiPortfolio()
+fundsportfolio = FundsPortfolio()
 
 #############################################################################
 # Figures
 #############################################################################
 
-fig_class_distribution_labels = ["Stocks", "FIIs"]
+fig_class_distribution_labels = ["Stocks", "FIIs", "Funds"]
 fig_class_distribution_values = []
 fig_class_distribution_values.append(stocksportfolio.total_invest()[1])
 fig_class_distribution_values.append(fiiportfolio.total_invest[1])
+fig_class_distribution_values.append(fundsportfolio.total_invest[1])
 
 fig_class_distribution = go.Figure(
     data=[
@@ -43,10 +46,13 @@ fig_class_distribution.update_layout(title="Porfolio Class Distribution", title_
 
 df_fii_money_monthly = fiiportfolio.fiitransactions.money_invested_monthly()
 df_fii_money_monthly["Class"] = "FII"
+df_fun_money_monthly = fundsportfolio.money_invested_monthly()
+df_fun_money_monthly.rename(columns={"Value": "Operation Cost"}, inplace=True)
+df_fun_money_monthly["Class"] = "Funds"
 df_sto_money_monthly = stocksportfolio.stockstransactions.money_invested_monthly()
 df_sto_money_monthly["Class"] = "Stocks"
 fig_money_inv_monthly = px.bar(
-    pd.concat([df_fii_money_monthly, df_sto_money_monthly]),
+    pd.concat([df_fii_money_monthly, df_fun_money_monthly, df_sto_money_monthly]),
     x="Date",
     y="Operation Cost",
     labels={"Operation Cost": "Amount Invested", "Date": "Month"},
