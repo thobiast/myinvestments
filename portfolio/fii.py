@@ -4,6 +4,9 @@
 
 import datetime
 import os
+from concurrent.futures import ProcessPoolExecutor
+
+import numpy as np
 
 import pandas as pd
 
@@ -11,7 +14,7 @@ import requests
 
 import requests_cache
 
-from .portutils import Singleton, UnitsTransactions, stocks_quote
+from .portutils import NUM_PROCESS, Singleton, UnitsTransactions
 
 # Cache for dividends
 CACHE_EXPIRE_DAYS = 15
@@ -91,6 +94,7 @@ class FiiPortfolio(metaclass=Singleton):
         print("Fii file: ", self.filename)
         self.fiitransactions = UnitsTransactions(self.filename)
         self.fiidiv = FiiDividends()
+        self.calc_monthly_dividends_df = pd.DataFrame()
 
     def current_position(self, ticker=None):
         """
@@ -145,7 +149,7 @@ class FiiPortfolio(metaclass=Singleton):
 
         return monthly_pos
 
-    def calc_monthly_dividends(self, sort_date_ascending=True):
+    def calc_monthly_dividends(self, sort_date_ascending=True, refresh=False):
         """
         Return a dataframe with dividends paid out monthly per ticker.
 
@@ -153,7 +157,11 @@ class FiiPortfolio(metaclass=Singleton):
             sort_date_ascending  (True/False): Return dataframe with Date column
                                                sorted ascending or descending
                                                default:  True - ascending
+            refresh               (True/False): Force refresh of data
         """
+        if not self.calc_monthly_dividends_df.empty and not refresh:
+            return self.calc_monthly_dividends_df
+
         pd_df = self.monthly_position().copy()
         # Add dividends monthly
         pd_df["Monthly Dividends"] = pd_df.apply(
@@ -167,11 +175,17 @@ class FiiPortfolio(metaclass=Singleton):
         )
         # Calculate money received
         pd_df["Amount Received"] = pd_df["Monthly Dividends"] * pd_df["Adj Qtd"]
-        # Get current ticker price
-        pd_df["Current Quote"] = pd_df.apply(
-            lambda x: stocks_quote(x["Ticker"], x["Stock Exchange"]).tail(1).iloc[0][0],
-            axis=1,
-        )
+
+        # Parallel execution to add new column with current quote
+        num_p_exec = len(pd_df) if len(pd_df) < NUM_PROCESS else NUM_PROCESS
+        df_chunks = np.array_split(pd_df, num_p_exec)
+        with ProcessPoolExecutor(max_workers=num_p_exec) as executors:
+            result = executors.map(
+                self.fiitransactions._add_current_quote_to_df,
+                df_chunks,
+            )
+        pd_df = pd.concat(result)
+
         # Calculate dividend yield for price it paid for ticker and for
         # current ticker price
         pd_df["Dividend Yield on Cost"] = (
@@ -192,7 +206,9 @@ class FiiPortfolio(metaclass=Singleton):
             .apply(lambda x: x.strftime("%Y-%b"))
         )
 
-        return pd_df.loc[pd_df["Monthly Dividends"].notna()]
+        self.calc_monthly_dividends_df = pd_df.loc[pd_df["Monthly Dividends"].notna()]
+
+        return self.calc_monthly_dividends_df
 
     @property
     def total_invest_monthly(self):
