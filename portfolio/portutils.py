@@ -4,6 +4,10 @@
 
 import datetime
 import functools
+import os
+from concurrent.futures import ProcessPoolExecutor
+
+import numpy as np
 
 import pandas as pd
 
@@ -18,6 +22,10 @@ requests_cache.install_cache(
     backend="sqlite",
     expire_after=datetime.timedelta(days=CACHE_EXPIRE_DAYS),
 )
+
+
+# Num process to parallel execution of some functions
+NUM_PROCESS = os.cpu_count() - 1
 
 
 @functools.lru_cache()
@@ -84,6 +92,7 @@ class UnitsTransactions:
         self.pd_df["Adj Qtd"] = self._add_adjusted_quantity_per_ticker()
         self._add_adjusted_total_invest_per_ticker()
         self.pd_df["Adj unit price"] = self._add_adjusted_price_per_ticker()
+        self.current_position_df = pd.DataFrame()
 
     def _convert_qty_unit_to_negative(self):
         """Convert the number of quantity units to negative for sells operations."""
@@ -135,23 +144,47 @@ class UnitsTransactions:
         else:
             return self.pd_df
 
-    def current_position(self, ticker=None):
+    @staticmethod
+    def _add_current_quote_to_df(pd_df):
+        """
+        Add current quote to dataframe.
+
+        Return dataframe with new column
+        """
+        print("add_current_quote_to_df: ", os.getpid())
+
+        # Add current quote
+        pd_df["Current Quote"] = pd_df.apply(
+            lambda x: stocks_quote(x["Ticker"], x["Stock Exchange"]).iloc[0][0], axis=1
+        )
+
+        return pd_df
+
+    def current_position(self, refresh=False):
         """
         Return dataframe with current tickers position.
 
         Parameters:
-            Ticker    (str): Return only for specific ticker.
-                             Default: all
+            refresh   (True/False): Force data refresh
+
+        Return Data Frame
         """
-        position_df = self.transactions(ticker).groupby("Ticker").tail(1).copy()
+        if not self.current_position_df.empty and not refresh:
+            return self.current_position_df
+
+        position_df = self.transactions().groupby("Ticker").tail(1).copy()
 
         # Filter out historical tickers, ie, ticker with current position is zero units
         position_df = position_df.loc[position_df["Adj Qtd"] != 0]
 
-        # Add current quote and pct return
-        position_df["Current Quote"] = position_df.apply(
-            lambda x: stocks_quote(x["Ticker"], x["Stock Exchange"]).iloc[0][0], axis=1
-        )
+        # Parallel execution to add new column with current quote
+        global NUM_PROCESS
+        num_p_exec = len(position_df) if len(position_df) < NUM_PROCESS else NUM_PROCESS
+        df_chunks = np.array_split(position_df, num_p_exec)
+        with ProcessPoolExecutor(max_workers=num_p_exec) as executors:
+            result = executors.map(self._add_current_quote_to_df, df_chunks)
+        position_df = pd.concat(result)
+
         position_df["Current Value"] = (
             position_df["Current Quote"] * position_df["Adj Qtd"]
         )
@@ -159,10 +192,11 @@ class UnitsTransactions:
             (position_df["Current Quote"] / position_df["Adj unit price"]) - 1
         ) * 100
 
-        return position_df.drop(
+        self.current_position_df = position_df.drop(
             ["Operation", "Date", "Quantity", "Unit Price", "Operation Cost"],
             axis="columns",
         )
+        return self.current_position_df
 
     def get_historical_position_prices(self, ticker=None):
         """

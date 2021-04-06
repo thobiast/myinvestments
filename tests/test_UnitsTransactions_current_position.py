@@ -42,6 +42,7 @@ def test_current_position():
 7     AA             B3  BBB11       70      8200      117.142857            150          10500      28.048781"""
     with patch.object(portutils.UnitsTransactions, "__init__", return_value=None):
         unitstransactions = portutils.UnitsTransactions(None)
+        unitstransactions.current_position_df = pd.DataFrame()
         with patch.object(portutils.UnitsTransactions, "transactions", pd_df):
             with patch.object(portutils, "stocks_quote", mock_fii_quote):
                 x = unitstransactions.current_position()
