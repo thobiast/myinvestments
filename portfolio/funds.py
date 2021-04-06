@@ -15,7 +15,7 @@ import requests
 
 import requests_cache
 
-from .portutils import Singleton
+from .portutils import Singleton, NUM_PROCESS
 
 
 # CVM url to download performance funds files
@@ -338,7 +338,7 @@ class FundsCvm:
         cnpj_local_files = [f for f in result if f is not None]
 
         pd_df = pd.DataFrame()
-        with ProcessPoolExecutor(max_workers=os.cpu_count() // 2) as executors:
+        with ProcessPoolExecutor(max_workers=NUM_PROCESS) as executors:
             result = executors.map(partial(self.read_csv, cnpj), cnpj_local_files)
         pd_df = pd.concat(result)
 
