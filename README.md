@@ -12,10 +12,11 @@ focus on buy and hold strategy and dividends.
 It reads csv files with transactions and generates insights about the investments.
 By default it reads sample transaction files on directory "*example\_transactions*".
 In order to read a diferent csv file, you can set environment variables
-"*STOCKS\_TRANSACTIONS*" and "*FII\_TRANSACTIONS*".
+"*STOCKS\_TRANSACTIONS*", "*FII\_TRANSACTIONS*" and "*FUNDS\_TRANSACTIONS*".
 
 ```bash
 $ export FII_TRANSACTIONS='myfiles/fiis.csv'
+$ export FUNDS_TRANSACTIONS='myfiles/funds.csv'
 $ export STOCKS_TRANSACTIONS='myfiles/stocks.csv'
 ```
 

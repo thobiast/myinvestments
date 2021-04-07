@@ -44,7 +44,7 @@ fig_position_by_fund = px.line(
     y="Historical Position",
     x="Date",
     color="Fund Name",
-    hover_data=["Adj Value"],
+    hover_data=["Adj Value", "Valor Cota"],
     hover_name="Fund Name",
     title="Daily Fund Position",
 )

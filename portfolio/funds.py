@@ -15,7 +15,7 @@ import requests
 
 import requests_cache
 
-from .portutils import Singleton, NUM_PROCESS
+from .portutils import NUM_PROCESS, Singleton
 
 
 # CVM url to download performance funds files
